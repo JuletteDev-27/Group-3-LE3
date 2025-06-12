@@ -1,16 +1,13 @@
-import { createContext, useContext } from "react"
+import { createContext, useContext } from "react";
 
-export const UserBearerToken = createContext(undefined)
+export const UserBearerTokenContext = createContext(undefined);
 
-export const UseUserBearerTokenContext = () => {
+export function useUserBearerToken() {
+  const user = useContext(UserBearerTokenContext);
 
-    const userBearerToken = useContext(userBearerTokenContext)
+  if (user === undefined) {
+    throw new Error("useUserBearerToken must be used within a UserBearerTokenContext.Provider");
+  }
 
-    if(userBearerToken === undefined){
-        throw new Error("This page is not wrapped within Context Provider!")
-    }
-
-    return userBearerToken
+  return user;
 }
-
-
