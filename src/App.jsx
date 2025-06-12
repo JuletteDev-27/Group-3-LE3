@@ -3,20 +3,21 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
-import { UserBearerToken } from './components/userBearerTokenContext'
+import {UserBearerTokenContext } from './components/userBearerTokenContext'
+import { TestView } from './views/TestView'
 
 
 
 function App() {
   const [userBearerToken, setUserBearerToken] = useState(null)
   return (
-      <UserBearerToken.Provider value={{ userBearerToken, setUserBearerToken }}>
+      <UserBearerTokenContext.Provider value={{ userBearerToken, setUserBearerToken }}>
         <Router>
           <Routes>
-            // Insert your routes here
+            //Insert Routes Here
           </Routes>
         </Router>
-      </UserBearerToken.Provider>
+      </UserBearerTokenContext.Provider>
   )
 }
 
