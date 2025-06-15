@@ -1,0 +1,17 @@
+.register-paper {
+  padding: 32px;
+  margin-top: 120px; /* Equivalent to marginTop: 15 */
+}
+
+.register-field {
+  display: block;
+  width: 94%;
+}
+
+.register-button {
+  padding: 5px 12px;
+}
+
+.register-button:hover {
+  background-color: #A0E1EA;
+}
