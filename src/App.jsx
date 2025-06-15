@@ -4,17 +4,19 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import './App.css'
 import {UserBearerTokenContext } from './components/userBearerTokenContext'
-import { TestView } from './views/TestView'
+import { UserProfile } from './views/UserProfile'
+import RegisterPage from './views/RegisterPage'
 
 
 
 function App() {
-  const [userBearerToken, setUserBearerToken] = useState(null)
+  const [userBearerToken, setUserBearerToken] = useState("")
   return (
       <UserBearerTokenContext.Provider value={{ userBearerToken, setUserBearerToken }}>
         <Router>
           <Routes>
-            //Insert Routes Here
+            <Route path ="/User-Profile" element={<UserProfile />}/>
+            <Route path="/User-Register" element={<RegisterPage />} />
           </Routes>
         </Router>
       </UserBearerTokenContext.Provider>
