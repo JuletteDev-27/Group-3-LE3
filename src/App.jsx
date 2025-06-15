@@ -6,7 +6,7 @@ import './App.css'
 import {UserBearerTokenContext } from './components/userBearerTokenContext'
 import { UserProfile } from './views/UserProfile'
 import RegisterPage from './views/RegisterPage'
-
+import HomePage from './views/HomePage'
 
 
 function App() {
@@ -15,6 +15,7 @@ function App() {
       <UserBearerTokenContext.Provider value={{ userBearerToken, setUserBearerToken }}>
         <Router>
           <Routes>
+            <Route path="/User-HomePage" element={<HomePage />} />
             <Route path ="/User-Profile" element={<UserProfile />}/>
             <Route path="/User-Register" element={<RegisterPage />} />
           </Routes>
