@@ -6,19 +6,26 @@ import './App.css'
 import {UserBearerTokenContext } from './components/userBearerTokenContext'
 import { UserProfile } from './views/UserProfile'
 import RegisterPage from './views/RegisterPage'
+import { UserDataContext } from './components/UserDataContext'
+import { TestLoginPage } from './views/TestLoginPage'
 
 
 
 function App() {
-  const [userBearerToken, setUserBearerToken] = useState("")
+  const [userBearerToken, setUserBearerToken] = useState(undefined)
+  const [userData, setUserData] = useState({})
   return (
+    
       <UserBearerTokenContext.Provider value={{ userBearerToken, setUserBearerToken }}>
-        <Router>
-          <Routes>
-            <Route path ="/User-Profile" element={<UserProfile />}/>
-            <Route path="/User-Register" element={<RegisterPage />} />
-          </Routes>
-        </Router>
+        <UserDataContext.Provider value={{ userData, setUserData }}>
+          <Router>
+            <Routes>
+              <Route path ="/User-Profile" element={<UserProfile />}/>
+              <Route path="/User-Register" element={<RegisterPage />} />
+              
+            </Routes>
+          </Router>
+        </UserDataContext.Provider>
       </UserBearerTokenContext.Provider>
   )
 }
