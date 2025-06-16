@@ -7,7 +7,7 @@ import {UserBearerTokenContext } from './components/userBearerTokenContext'
 import { UserProfile } from './views/UserProfile'
 import RegisterPage from './views/RegisterPage'
 import { UserDataContext } from './components/UserDataContext'
-import { TestLoginPage } from './views/TestLoginPage'
+import HomePage from './views/HomePage'
 
 
 
@@ -22,7 +22,7 @@ function App() {
             <Routes>
               <Route path ="/User-Profile" element={<UserProfile />}/>
               <Route path="/User-Register" element={<RegisterPage />} />
-              
+              <Route path="/User-HomePage" element={<HomePage />} />
             </Routes>
           </Router>
         </UserDataContext.Provider>
