@@ -42,13 +42,13 @@ const LandingPage = () => {
   };
 
   return (
-    <Container maxWidth="xl" disableGutters sx={{ minHeight: '100vh' }}>
-      <Paper sx={{ display: 'flex', minHeight: '100vh', boxShadow: 'none' /* No shadow for full page effect */ }}> 
+    <Container maxWidth="lg" sx={{ mt: 5, mb: 5 }}>
+      <Paper sx={{ display: 'flex', minHeight: '890px' }}>
         {/* LEFT: Image Section with space around */}
         <Box
           sx={{
             flex: 1,
-            p: 15, // Outer padding around the image
+            p: 15,  // Outer padding around the image
           }}
         >
           <Box
@@ -92,7 +92,7 @@ const LandingPage = () => {
               p: 4
             }}
           >
-            <Typography variant="h5" gutterBottom sx={{ textAlign: 'right', mb: 6 }}>
+            <Typography variant="h5" gutterBottom sx={{ textAlign: 'right', mb: 5 }}>
               Site Name
             </Typography>
 
