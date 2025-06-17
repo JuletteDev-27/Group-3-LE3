@@ -1,10 +1,21 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import mockServer from 'vite-plugin-mock-server';
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
-    react()
+    react(),
+    mockServer({
+      mock: {
+        '/post': {
+          method: 'POST',
+          response: (req, res) => {
+            // Your logic to handle the post request
+            res.json({ id: 'some-id', content: req.body.content });
+          },
+        },
+      },
+    }),
   ],
-})
+});

@@ -1,262 +1,294 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/NavBar";
 import {
   Box,
   Typography,
   TextField,
-  Button,
   Avatar,
   List,
   ListItem,
-  ListItemText,
   Divider,
+  Button,
   IconButton,
+  ListItemText,
+  AppBar,
+  Toolbar,
 } from "@mui/material";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
 import ThumbDownIcon from "@mui/icons-material/ThumbDown";
+import "../assets/css/HomePage.css";
 
-const mockPosts = [
-  { id: 1, title: "Post One", content: "This is the content of post one." },
-  { id: 2, title: "Post Two", content: "Second post is more insightful." },
-  { id: 3, title: "Post Three", content: "Here’s a cool update from Post 3!" },
-  { id: 4, title: "Post Four", content: "Fourth post with great advice." },
-  { id: 5, title: "Post Five", content: "Fifth post with community news." },
-  { id: 6, title: "Post Six", content: "Last post to round things off." },
-];
+// ========== INLINE NAVBAR COMPONENT ==========
+// ========== INLINE NAVBAR COMPONENT WITH LINKS ==========
+const Navbar = () => {
+  return (
+    <AppBar position="fixed" style={{ backgroundColor: "#2c2e61" }} sx={{ zIndex: 1200 }}>
+      <Toolbar sx={{ justifyContent: "space-between", px: 2 }}>
+        {/* Left-aligned buttons */}
+        <Box sx={{ display: "flex", gap: 2 }}>
+          <Button color="inherit" href="/User-HomePage">
+            Home
+          </Button>
+          <Button color="inherit" href="/upload">
+            Upload Post
+          </Button>
+          <Button color="inherit" href="/profile">
+            Profile Settings
+          </Button>
+          <Button color="inherit" href="/User-RegisterPage">
+            Log Out
+          </Button>
+        </Box>
 
-const mockComments = [
-  { postId: 1, content: "Awesome post!" },
-  { postId: 1, content: "Really helpful." },
-  { postId: 2, content: "Thanks for sharing." },
-  { postId: 3, content: "Interesting perspective!" },
-  { postId: 4, content: "I agree completely." },
-  { postId: 5, content: "Let’s talk more about this." },
-  { postId: 6, content: "Well written!" },
-];
+        {/* Site Name on the right */}
+        <Typography variant="h6" sx={{ color: "white" }}>
+          Site Name
+        </Typography>
+      </Toolbar>
+    </AppBar>
+  );
+};
 
+// ========== MAIN HOMEPAGE COMPONENT ==========
 const HomePage = () => {
-  const [posts] = useState(mockPosts);
-  const [comments, setComments] = useState(mockComments);
-  const [selectedPostId, setSelectedPostId] = useState(mockPosts[0].id);
+  const [posts, setPosts] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [selectedPostId, setSelectedPostId] = useState(null);
   const [newComment, setNewComment] = useState("");
-  const [likes, setLikes] = useState({});
-  const [dislikes, setDislikes] = useState({});
+  const [reactions, setReactions] = useState({});
   const [userReactions, setUserReactions] = useState({});
-  const token = "YOUR_BEARER_TOKEN";
+
+  useEffect(() => {
+    const mockPosts = [
+      { id: 1, title: "Post One", content: "Life is short, and the world is wide. Let's go explore!" },
+      { id: 2, title: "Post Two", content: "Just got back from another trip, and wow... this was truly one for the books! Easily the best five days of my life. Already counting down the days until the next adventure." },
+    ];
+    setPosts(mockPosts);
+    setSelectedPostId(mockPosts[0].id);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedPostId) return;
+
+    const mockReplies = {
+      1: [
+        { id: 101, content: "Wow! Where is this located?", username: "commenter_1", timestamp: "June 15, 2025" },
+        { id: 102, content: "Nice pictures!", username: "commenter_2", timestamp: "June 15, 2025" },
+        { id: 103, content: "Love this <3", username: "commenter_3", timestamp: "June 16, 2025" },
+      ],
+      2: [{ id: 201, content: "Comment 1 on Post 2" }],
+    };
+
+    setComments(mockReplies[selectedPostId] || []);
+    setReactions((prev) => ({
+      ...prev,
+      [selectedPostId]: prev[selectedPostId] || { likes: 0, dislikes: 0 },
+    }));
+  }, [selectedPostId]);
 
   const handleCommentKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey && newComment.trim()) {
-      const updated = [...comments, { postId: selectedPostId, content: newComment.trim() }];
-      setComments(updated);
-      setNewComment("");
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      const trimmed = newComment.trim();
+      if (!trimmed) return;
+
+      const newReply = {
+        id: Date.now(),
+        content: trimmed,
+        username: "Your Username",
+        timestamp: new Date().toLocaleDateString(),
+      };
+      setComments((prev) => [...prev, newReply]);
+      setNewComment("");
     }
   };
 
-  const toggleLike = async () => {
-  if (!selectedPostId) return;
+  const toggleReaction = (type) => {
+    const current = userReactions[selectedPostId];
+    const newReaction = current === type ? null : type;
 
-  const hasLiked = userReactions[selectedPostId] === "like";
-  const hasDisliked = userReactions[selectedPostId] === "dislike";
+    setUserReactions((prev) => ({ ...prev, [selectedPostId]: newReaction }));
 
-  try {
-    const method = hasLiked ? "DELETE" : "POST";
-    const res = await fetch(`/post/${selectedPostId}/likes`, {
-      method,
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    setReactions((prev) => {
+      const prevLikes = prev[selectedPostId]?.likes || 0;
+      const prevDislikes = prev[selectedPostId]?.dislikes || 0;
 
-    if (res.status === 204) {
-      setUserReactions((prev) => ({
-        ...prev,
-        [selectedPostId]: hasLiked ? null : "like",
-      }));
+      let newLikes = prevLikes;
+      let newDislikes = prevDislikes;
 
-      setLikes((prev) => ({
-        ...prev,
-        [selectedPostId]: hasLiked ? (prev[selectedPostId] || 1) - 1 : (prev[selectedPostId] || 0) + 1,
-      }));
-
-      if (!hasLiked && hasDisliked) {
-        setDislikes((prev) => ({
-          ...prev,
-          [selectedPostId]: (prev[selectedPostId] || 1) - 1,
-        }));
+      if (type === "like") {
+        newLikes += current === "like" ? -1 : 1;
+        if (current === "dislike") newDislikes -= 1;
+      } else {
+        newDislikes += current === "dislike" ? -1 : 1;
+        if (current === "like") newLikes -= 1;
       }
-    } else if (res.status === 409 && !hasLiked) {
-      console.warn("Already liked");
-    }
-  } catch (err) {
-    console.error("Like API error:", err);
-  }
-};
 
+      return {
+        ...prev,
+        [selectedPostId]: { likes: newLikes, dislikes: newDislikes },
+      };
+    });
+  };
 
-  const toggleDislike = () => {
-  const hasDisliked = userReactions[selectedPostId] === "dislike";
-  const hasLiked = userReactions[selectedPostId] === "like";
-
-  setUserReactions((prev) => ({
-    ...prev,
-    [selectedPostId]: hasDisliked ? null : "dislike",
-  }));
-
-  setDislikes((prev) => ({
-    ...prev,
-    [selectedPostId]: hasDisliked ? (prev[selectedPostId] || 1) - 1 : (prev[selectedPostId] || 0) + 1,
-  }));
-
-  if (!hasDisliked && hasLiked) {
-    setLikes((prev) => ({
-      ...prev,
-      [selectedPostId]: (prev[selectedPostId] || 1) - 1,
-    }));
-  }
-};
-
-
-  const handleDeleteComment = (indexToDelete) => {
-    const updated = comments.filter((c, i) => !(c.postId === selectedPostId && i === indexToDelete));
-    setComments(updated);
+  const handleDeleteComment = (replyId) => {
+    setComments((prev) => prev.filter((c) => c.id !== replyId));
   };
 
   return (
-    <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
+    <>
+      {/* ========== RENDER INLINE NAVBAR ========== */}
       <Navbar />
-      <Box sx={{ flex: 1, display: "flex", pt: 8 }}>
-        {/* Sidebar: Post List */}
-        <Box
-          sx={{
-            width: "20%",
-            display: "flex",
-            flexDirection: "column",
-            borderRight: "1px solid #ccc",
-            p: 2,
-            boxSizing: "border-box",
-          }}
-        >
+  <Toolbar />
+      {/* ========== MAIN CONTENT ========== */}
+      <Box
+        sx={{
+
+          height: "100vh",
+          display: "grid",
+          gridTemplateColumns: "250px 1fr 300px",
+          gap: "1rem",
+          p: "1rem",
+          backgroundColor: "#bca47d",
+        }}
+      >
+        {/* Sidebar */}
+        <Box className="sidebar">
           <List>
-            {posts.map((post) => (
+            {posts.map((p) => (
               <ListItem
-                key={post.id}
+                key={p.id}
                 button
-                selected={post.id === selectedPostId}
-                onClick={() => setSelectedPostId(post.id)}
+                selected={p.id === selectedPostId}
+                onClick={() => setSelectedPostId(p.id)}
+                sx={{
+                  color: "white",
+                  "&:hover": { backgroundColor: "#1565C0" },
+                  "&.Mui-selected": { backgroundColor: "#0D47A1" },
+                }}
               >
-                <ListItemText primary={post.title} />
+                <ListItemText primary={`Post #${p.id}`} />
               </ListItem>
             ))}
           </List>
-          <Box sx={{ textAlign: "center", mt: 2 }}>
-            <Avatar sx={{ width: 80, height: 80, mx: "auto" }} />
-            <Typography sx={{ mt: 1 }}>text-username</Typography>
+          <Box sx={{ mt: 2 }}>
+            <Avatar alt="User Avatar" src="https://source.unsplash.com/random/100x100/?avatar" sx={{ width: 80, height: 80, mx: "auto" }} />
+            <Typography sx={{ mt: 1, fontStyle: "italic" }}>@username</Typography>
           </Box>
         </Box>
 
-        {/* Main: Post Content */}
-        <Box
-          sx={{
-            flex: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            px: 2,
-          }}
-        >
-          <Box
-            sx={{
-              width: "100%",
-              height: "100%",
-              border: "1px solid #ccc",
-              borderRadius: 2,
-              p: 4,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              minHeight: 300,
-            }}
-          >
-            <Typography
-              variant="h4"
-              align="center"
-              sx={{ fontSize: "2rem" }}
-            >
-              {posts.find((p) => p.id === selectedPostId)?.content || "[No Post Selected]"}
-            </Typography>
+        {/* Post Content */}
+        <Box className="post-card">
+          <Typography variant="h5" sx={{ mb: 2 }}>
+            {posts.find((p) => p.id === selectedPostId)?.content || "[No Post Selected]"}
+          </Typography>
+          <Box sx={{ display: "flex", gap: "1rem", mt: 2 }}>
+            <img src="https://source.unsplash.com/random/300x200/?travel" alt="Image 1" style={{ width: "48%", height: "auto", borderRadius: "12px" }} />
+            <img src="https://source.unsplash.com/random/300x200/?landscape" alt="Image 2" style={{ width: "48%", height: "auto", borderRadius: "12px" }} />
           </Box>
+          <Typography variant="caption" sx={{ mt: 1, fontStyle: "italic" }}>
+            Posted on June 15, 2025
+          </Typography>
         </Box>
 
-        {/* Comments */}
-        <Box
-          sx={{
-            width: "25%",
-            display: "flex",
-            flexDirection: "column",
-            p: 2,
-            borderLeft: "1px solid #ccc",
-            boxSizing: "border-box",
-          }}
-        >
+        {/* Comments & Reactions */}
+        <Box className="comment-panel">
+          {/* Comment Input */}
           <TextField
-            label="Write a comment"
-            fullWidth
+            label="Write a comment..."
             multiline
             rows={3}
             variant="outlined"
+            fullWidth
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
             onKeyDown={handleCommentKeyDown}
+            sx={{
+              border: "2px solid #2c2e61", 
+              borderRadius: "12px",
+              "& .MuiOutlinedInput-root": { "& fieldset": { borderColor: "#2c2e61" } },
+            }}
           />
 
-          <Box sx={{ mt: 2, flex: 1, overflowY: "auto" }}>
-            <List>
-              {comments
-                .filter((c) => c.postId === selectedPostId)
-                .map((c, i) => (
-                  <React.Fragment key={i}>
-                    <ListItem alignItems="flex-start" sx={{ alignItems: "flex-start", flexDirection: "column", p: 1 }}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                          <Avatar sx={{ width: 32, height: 32, mr: 1 }}>Pro</Avatar>
-                          <Box>
-                            <Typography variant="subtitle2">Username</Typography>
-                            <Typography variant="caption">{new Date().toLocaleDateString()}</Typography>
-                          </Box>
-                        </Box>
-                        <Button size="small" color="error" onClick={() => handleDeleteComment(i)}>Delete</Button>
+          {/* Comments List */}
+          <List sx={{ flex: 1, overflowY: "auto", maxHeight: "400px" }}>
+            {comments.map((c) => (
+              <React.Fragment key={c.id}>
+                <ListItem alignItems="flex-start" sx={{ flexDirection: "column", p: 1 }}>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%" }}>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <Avatar alt="Commenter Avatar" src="https://source.unsplash.com/random/40x40/?avatar" sx={{ width: 40, height: 40, mr: 1 }} />
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: "bold" }}>
+                          {c.username}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "gray" }}>
+                          Posted on {c.timestamp}
+                        </Typography>
                       </Box>
-                      <Box
-                        sx={{
-                          mt: 1,
-                          p: 1,
-                          border: "1px solid #ccc",
-                          borderRadius: 1,
-                          width: "100%",
-                        }}
-                      >
-                        <Typography variant="body2">{c.content}</Typography>
-                      </Box>
-                    </ListItem>
-                    <Divider />
-                  </React.Fragment>
-                ))}
-            </List>
-          </Box>
+                    </Box>
+                    <Button
+                      size="small"
+                      color="error"
+                      onClick={() => handleDeleteComment(c.id)}
+                      sx={{
+                        background: "#f6e8d2", 
+                        border: "1px solid #c9a16c",
+                        color: "#333",
+                        borderRadius: "8px",
+                      }}
+                    >
+                      Delete
+                    </Button>
+                  </Box>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    {c.content}
+                  </Typography>
+                </ListItem>
+                <Divider />
+              </React.Fragment>
+            ))}
+          </List>
 
-          <Box sx={{ mt: 2, display: "flex", justifyContent: "center", gap: 2 }}>
-            <IconButton color="primary" onClick={toggleLike}>
-              <ThumbUpIcon />
-            </IconButton>
-            <Typography>{likes[selectedPostId] || 0}</Typography>
-
-            <IconButton color="error" onClick={toggleDislike}>
-              <ThumbDownIcon />
-            </IconButton>
-            <Typography>{dislikes[selectedPostId] || 0}</Typography>
+          {/* Reaction Buttons */}
+          <Box className="reaction-buttons">
+            <Button
+              onClick={() => toggleReaction("like")}
+              sx={{
+                background: "white",
+                color: "#1c2654",
+                border: "none",
+                borderRadius: "12px",
+                padding: "0.5rem 1rem",
+                fontSize: "1rem",
+                fontWeight: "bold",
+              }}
+            >
+              Like
+            </Button>
+            <Typography sx={{ ml: 1, fontWeight: "bold" }}>
+              {reactions[selectedPostId]?.likes || 0}
+            </Typography>
+            <Button
+              onClick={() => toggleReaction("dislike")}
+              sx={{
+                background: "white",
+                color: "#aa0000",
+                border: "none",
+                borderRadius: "12px",
+                padding: "0.5rem 1rem",
+                fontSize: "1rem",
+                fontWeight: "bold",
+              }}
+            >
+              Dislike
+            </Button>
+            <Typography sx={{ ml: 1, fontWeight: "bold" }}>
+              {reactions[selectedPostId]?.dislikes || 0}
+            </Typography>
           </Box>
         </Box>
       </Box>
-    </Box>
+    </>
   );
 };
 

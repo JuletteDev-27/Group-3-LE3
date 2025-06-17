@@ -7,7 +7,7 @@ import {UserBearerTokenContext } from './components/userBearerTokenContext'
 import { UserProfile } from './views/UserProfile'
 import RegisterPage from './views/RegisterPage'
 import HomePage from './views/HomePage'
-
+import UploadPage from "./views/UploadPage";
 
 function App() {
   const [userBearerToken, setUserBearerToken] = useState("")
@@ -18,6 +18,7 @@ function App() {
             <Route path="/User-HomePage" element={<HomePage />} />
             <Route path ="/User-Profile" element={<UserProfile />}/>
             <Route path="/User-Register" element={<RegisterPage />} />
+            <Route path="/upload" element={<UploadPage />} />
           </Routes>
         </Router>
       </UserBearerTokenContext.Provider>
