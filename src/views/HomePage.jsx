@@ -4,70 +4,24 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import axios from 'axios';
 import Navbar from '../components/NavBar';
-import { RedirectIfNoToken } from '../components/RedirectIfNoToken';
-import { useUserBearerToken } from '../components/userBearerTokenContext';
 import { useNavigate } from 'react-router-dom';
-import { useUserData } from '../components/UserDataContext';
+import { retrieveUserData, setUserData } from '../components/UserDataHandler';
 import { UserProfilePicture } from '../components/UserProfilePicture';
 import { PostComponent } from "../components/PostComponent"
 import { ThumbDown, ThumbUp } from "@mui/icons-material"
 import { ReplyComponent } from '../components/ReplyComponent';
+import { retrieveSessionToken } from '../components/sessionTimeoutHandler';
+import { useLiveUserPosts} from '../components/UserPostsHandler';
 const HomePage = () => {
 
-  const navigate = useNavigate();
-  const {userBearerToken} = useUserBearerToken()
-  const {userData, setUserData} = useUserData()
+  const userBearerToken = retrieveSessionToken()
+  const userData = retrieveUserData()
   const [userLikes, setUserLikes] = useState([])
-  const [posts, setPosts] = useState([])
   const [page, setPage] = useState(1)
+  const {userPosts, userReplies, isLoading} = useLiveUserPosts(page, retrieveSessionToken());
+  const posts = userPosts?.[page] || [];
   const [likedUnliked, setLikedUnliked] = useState(false)
-  const [isLoading, setIsLoading] = useState(false);
-  RedirectIfNoToken(userBearerToken, navigate)
   const [openReplies, setOpenReplies] = useState({})
-  const [postReplies, setPostReplies] = useState({})
-
-  
-
- useEffect(()=>{
-      if(posts.length === 0){
-        setIsLoading(true)
-      }
-    },[posts])
-
-    useEffect(() => {
-  let isMounted = true;
-
-    const fetchPosts = async () => {
-      try {
-        const response = await axios.get(`https://supabase-socmed.vercel.app/post?page=${page}`, {
-          headers: {
-            Authorization: `Bearer ${userBearerToken}`,
-          },
-        });
-
-        if (isMounted) {
-          setPosts(response.data);
-          setIsLoading(false);
-        }
-        } catch (error) {
-          console.error("Failed to fetch posts:", error);
-        }
-    };
-
-      fetchPosts(); 
-
-      const intervalId = setInterval(fetchPosts, 5000);
-
-      return () => {
-        isMounted = false;
-        clearInterval(intervalId);
-      };
-    }, [page, userBearerToken]);
-
-    useEffect(()=>{
-      console.log(postReplies)
-    },[postReplies])
-
     useEffect(() => {
       const fetchLikedPosts = async () => {
         try {
@@ -82,8 +36,7 @@ const HomePage = () => {
             }
         };
           
-        fetchLikedPosts(); 
-          
+        fetchLikedPosts();  
     }, []);
 
     const checkIfPostIsLiked = (itemId) => {
@@ -139,22 +92,7 @@ const HomePage = () => {
       }
     }
 
-
-    const fetchPostData = async (itemId) =>{
-      try {
-          const response = await axios.get(`https://supabase-socmed.vercel.app/post/${itemId}`, {
-            headers:{
-              Authorization: `Bearer ${userBearerToken}`
-            }
-          })
-          setPostReplies((prev)=>({
-            ...prev,
-            [itemId]: response.data.replies
-          }))
-        } catch (error) {
-          console.error(error)
-        }
-    } 
+   
 
     const handleShowReplies = (itemId) => {
       setOpenReplies((prev) => {
@@ -163,12 +101,9 @@ const HomePage = () => {
           [itemId]: !prev[itemId]
         };
 
-        if (!prev[itemId]) {
-          fetchPostData(itemId);
-        }
         return next;
       });
-  };
+    };
 
   return (
     <>
@@ -200,39 +135,162 @@ const HomePage = () => {
             <Typography variant="body1">Page {page}</Typography>
           </Stack>
           <List sx={{ width:"100%" }}>
-             {isLoading && (
-              <Grid>fetching posts ...</Grid>
-            )}
-              {posts.map((item,index)=>(
-                <ListItem sx={{ display:"grid", gap:0, backgroundColor:"white", boxShadow: 3, mb:2, padding:1, width:"100%" }}>
-                  <Stack direction="row" sx={{ mb:2, width:"max-content" }} spacing={1}>
-                     <IconButton sx={{width:"max-content", borderRadius:50, '&:hover':{
-                      color:"blue"
-                     }}} onClick={()=>handleLike(item.id)} color={checkIfPostIsLiked(item.id) ? "primary" : "initial"}>
-                      <ThumbUp/>
-                     </IconButton>
-                      <IconButton sx={{width:"max-content", borderRadius:50, '&:hover':{
-                      color:"red"
-                     } }} onClick={()=>handleUnlike(item.id)}>
-                      <ThumbDown/>
-                     </IconButton>
-                  </Stack>                 
-                  <ListItemButton sx={{ margin:0, width:"100%",  }}>
-                     <PostComponent key={index} postOwnerData={item.users} postContent={item.content} postDateCreated={item.created_at} postRepliesCount={item.replies[0].count} postLikesCount={item.likes[0].count} postID={item.id} isLoading={isLoading}/>
+             {isLoading && 
+                [...Array(9)].map((_, index) => (
+                  <ListItem
+                    key={index}
+                    sx={{
+                      display: "grid",
+                      gap: 0,
+                      backgroundColor: "white",
+                      boxShadow: 3,
+                      mb: 2,
+                      padding: 1,
+                      width: "100%",
+                    }}
+                  >
+                    <Stack direction="row" sx={{ mb: 2, width: "max-content" }} spacing={1}>
+                      <IconButton
+                        sx={{
+                          width: "max-content",
+                          borderRadius: 50,
+                          "&:hover": {
+                            color: "blue",
+                          },
+                        }}
+                      >
+                        <ThumbUp />
+                      </IconButton>
+                      <IconButton
+                        sx={{
+                          width: "max-content",
+                          borderRadius: 50,
+                          "&:hover": {
+                            color: "red",
+                          },
+                        }}
+                      >
+                        <ThumbDown />
+                      </IconButton>
+                    </Stack>
+
+                    <ListItemButton sx={{ margin: 0, width: "100%" }}>
+                      <Grid container sx={{ width: "max-content", padding: 3, gap: 2 }}>
+                        <Grid item xs={12}>
+                          <Stack spacing={1} direction="row" alignItems="center">
+                            <Skeleton variant="circular" sx={{ width: "100px", height: "100px" }} />
+                            <Skeleton variant="rounded" sx={{ width: "100px", height: "10px" }} />
+                          </Stack>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Stack direction="row" alignItems="center">
+                            <Skeleton variant="text" sx={{ width: "100%", height: "10px" }} />
+                          </Stack>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Stack direction="row" alignItems="center">
+                            <Skeleton variant="rectangular" sx={{ width: "100%", height: "100px" }} />
+                          </Stack>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Stack
+                            spacing={0.5}
+                            direction="row"
+                            sx={{ display: "flex", alignItems: "center", height: "fit-content" }}
+                          >
+                            <Skeleton variant="rounded" sx={{ width: "100px", height: "10px" }} />
+                          </Stack>
+                        </Grid>
+                      </Grid>
+                    </ListItemButton>
+                  </ListItem>
+                ))
+              }
+
+              {!isLoading &&
+              posts.map((item, index) => (
+                <ListItem
+                  key={item.id}
+                  sx={{
+                    display: "grid",
+                    gap: 0,
+                    backgroundColor: "white",
+                    boxShadow: 3,
+                    mb: 2,
+                    padding: 1,
+                    width: "100%",
+                  }}
+                >
+                  <Stack direction="row" sx={{ mb: 2, width: "max-content" }} spacing={1}>
+                    <IconButton
+                      sx={{
+                        width: "max-content",
+                        borderRadius: 50,
+                        "&:hover": {
+                          color: "blue",
+                        },
+                      }}
+                      onClick={() => handleLike(item.id)}
+                      color={checkIfPostIsLiked(item.id) ? "primary" : "inherit"}
+                    >
+                      <ThumbUp />
+                    </IconButton>
+
+                    <IconButton
+                      sx={{
+                        width: "max-content",
+                        borderRadius: 50,
+                        "&:hover": {
+                          color: "red",
+                        },
+                      }}
+                      onClick={() => handleUnlike(item.id)}
+                    >
+                      <ThumbDown />
+                    </IconButton>
+                  </Stack>
+
+                  <ListItemButton sx={{ margin: 0, width: "100%" }}>
+                    <PostComponent
+                      key={item.id}
+                      postOwnerData={item.users}
+                      postContent={item.content}
+                      postDateCreated={item.created_at}
+                      postRepliesCount={item.replies?.[0]?.count ?? 0}
+                      postLikesCount={item.likes?.[0]?.count ?? 0}
+                      postID={item.id}
+                      isLoading={isLoading}
+                    />
                   </ListItemButton>
-                   <ListItemButton onClick={()=>handleShowReplies(item.id)}>
-                     open replies
-                   </ListItemButton>
-                   <Collapse in={!!openReplies[item.id]} timeout={"auto"} unmountOnExit>
-                     <List sx={{ width:"950px", maxHeight:"200px", overflowY:"scroll", overflowX:"hidden", scrollbarColor:"transparent" }}>
-                      {postReplies[item.id]?.map((item,index)=>(
-                        <ReplyComponent replyContent={item.content} replyID={item.id} replyOwnerData={item.users}/>
+
+                  <ListItemButton onClick={() => handleShowReplies(item.id)}>
+                    open replies
+                  </ListItemButton>
+
+                  <Collapse in={!!openReplies[item.id]} timeout="auto" unmountOnExit>
+                    <List
+                      sx={{
+                        width: "950px",
+                        maxHeight: "200px",
+                        overflowY: "scroll",
+                        overflowX: "hidden",
+                        scrollbarColor: "transparent",
+                      }}
+                    >
+                     {userReplies[item.id]?.replies?.map((reply, index) => (
+                        <ReplyComponent
+                          key={reply.id}
+                          replyContent={reply.content}
+                          replyID={reply.id}
+                          replyOwnerData={reply.users}
+                        />
                       ))}
-                     </List>
-                   </Collapse>
+
+                    </List>
+                  </Collapse>
                 </ListItem>
-                
-              ))}   
+              ))}
+ 
           </List>
           </Grid>
       </Box>

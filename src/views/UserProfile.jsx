@@ -1,25 +1,21 @@
-import { useEffect, useState } from "react"
-import { useUserBearerToken } from "../components/userBearerTokenContext"
+import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import axios from "axios"
 import { Grid, Typography, TextField, List, ListItem, ListItemButton, Stack, IconButton, Skeleton} from "@mui/material"
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import ButtonBase from '@mui/material/ButtonBase';
-import { useUserData } from "../components/UserDataContext"
-import { RedirectIfNoToken } from "../components/RedirectIfNoToken"
+import { retrieveUserData, setUserData } from "../components/UserDataHandler"
 import { LoadingModal } from "../components/LoadingModal"
 import { UserProfilePicture } from "../components/UserProfilePicture"
 
 import Navbar from "../components/NavBar"
+import { retrieveSessionToken } from "../components/sessionTimeoutHandler"
 
 export const UserProfile = () => {
 
     const navigate = useNavigate();
-    const {userBearerToken} = useUserBearerToken()
-    const {userData, setUserData} = useUserData();
+    const userBearerToken = retrieveSessionToken()
+    const userData = retrieveUserData()
     const [isLoading, setIsLoading] = useState(false);
-    RedirectIfNoToken(userBearerToken, navigate)
     
     const handleAvatarChange = (event) => {
       const file = event.target.files?.[0];
@@ -47,7 +43,6 @@ export const UserProfile = () => {
                 },
               }
             );
-            console.log(response.data)
             setUserData(response.data);
             setIsLoading(false);
           } catch (error) {
