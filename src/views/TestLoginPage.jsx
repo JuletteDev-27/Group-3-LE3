@@ -1,4 +1,4 @@
-import { Grid, TextField, InputAdornment, IconButton, Button, Typography } from "@mui/material"
+import { Grid, TextField, InputAdornment, IconButton, Button, Typography, Alert } from "@mui/material"
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import { useEffect, useState } from "react"
@@ -12,9 +12,11 @@ import StickyNote2Icon from '@mui/icons-material/StickyNote2';
 
 export const TestLoginPage = () => {
 
+    
     const navigate = useNavigate();
     const [isSubmitted, setIsSubmitted] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
+    const [isFailed, setIsFailed] = useState(false)
     const[userCredentials, setUserCredentials] = useState({
         email:"",
         password:""
@@ -24,6 +26,13 @@ export const TestLoginPage = () => {
         password: null
     })
     const [showPassword, setShowPassword] = useState(false)
+
+    useEffect(()=>{
+        if(isFailed){
+            setTimeout(setIsFailed(true),5000)
+            setIsFailed(false)
+        }
+    },[isFailed])
 
     useEffect(() => {
         const SignIn = async () => {
@@ -60,9 +69,10 @@ export const TestLoginPage = () => {
             navigate("/User-HomePage");
 
             } catch (error) {
-            setIsSubmitted(false);
-            setIsLoading(false);
-            console.error(error);
+                setIsSubmitted(false);
+                setIsLoading(false);
+                setIsFailed(true)
+            
             }
         };
 
@@ -121,6 +131,11 @@ export const TestLoginPage = () => {
 
   return (
     <Grid container sx={{ width:"100%", height:"100svh", justifyContent:"center", alignItems:"center", backgroundColor: "#B09E7D", position:"relative"}}>
+        {isFailed && (
+            <Alert variant="filled" severity="error">
+             This is a filled error Alert.
+            </Alert>
+        )}
         <Typography variant="h2" sx={{ position:"absolute", top:0, right:0, padding: 7, fontWeight:"900", color:"#0B1657"}}>EchoNote</Typography>
         <Grid container sx={{ height: "max-content", width:"100%", justifyContent:"center", alignItems:"center"}}>
             <Grid item sx={{ width:"950px", height:"max-content", padding:10}}>

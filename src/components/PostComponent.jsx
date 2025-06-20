@@ -5,8 +5,8 @@ import ThumbUpRoundedIcon from '@mui/icons-material/ThumbUpRounded';
 
 export const PostComponent = ({postOwnerData, postContent ,postLikesCount, postRepliesCount, postID, postDateCreated, isLloading, isLiked}) => {
   return (
-    <>  
-        <Grid container sx={{ width:"max-content", padding:3}}>
+      
+        <Grid container sx={{ width:"100%", padding:3}}>
             <Grid item size={{ xs:12 }}>
                 <Stack spacing={1} direction={"row"} alignItems={"center"}>
                     <UserProfilePicture imageSrc={postOwnerData?.profile_picture} />
@@ -31,7 +31,7 @@ export const PostComponent = ({postOwnerData, postContent ,postLikesCount, postR
                 </Stack>
             </Grid>
         </Grid>
-    </>
+    
    
     
   )
