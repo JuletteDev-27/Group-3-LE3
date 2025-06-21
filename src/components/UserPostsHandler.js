@@ -2,20 +2,24 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
 export const useLiveUserPosts = (page, userBearerToken) => {
-  const sessionPosts = JSON.parse(sessionStorage.getItem("userPosts")) || {};
-  const sessionReplies = JSON.parse(sessionStorage.getItem("userReplies")) || {};
+  const cachedPosts = JSON.parse(sessionStorage.getItem("userPosts") || "{}");
+  const cachedReplies = JSON.parse(sessionStorage.getItem("userReplies") || "{}");
 
-  const [userPosts, setUserPosts] = useState(sessionPosts);
-  const [userReplies, setUserReplies] = useState(sessionReplies);
+  const [userPosts, setUserPosts] = useState(cachedPosts);
+  const [userReplies, setUserReplies] = useState(cachedReplies);
 
-  const [isLoading, setIsLoading] = useState(() => {
-     return !sessionPosts[page] || sessionPosts[page].length === 0;
+  const [loadingPages, setLoadingPages] = useState(() => {
+    return (!cachedPosts[page] || cachedPosts[page].length === 0) ? [page] : [];
   });
 
   const isMounted = useRef(true);
 
   useEffect(() => {
     isMounted.current = true;
+
+    if (!userPosts[page] || userPosts[page].length === 0) {
+      setLoadingPages(prev => [...new Set([...prev, page])]);
+    }
 
     const fetchPostsAndReplies = async () => {
       try {
@@ -30,59 +34,47 @@ export const useLiveUserPosts = (page, userBearerToken) => {
 
         const posts = postRes.data;
 
-        if (isMounted.current) {
-          setUserPosts((prev) => {
-            const updated = {
-              ...prev,
-              [page]: posts,
-            };
-            sessionStorage.setItem("userPosts", JSON.stringify(updated));
-            return updated;
-          });
-        }
+        if (!isMounted.current) return;
+
+        setUserPosts(prev => {
+          const updated = { ...prev, [page]: posts };
+          sessionStorage.setItem("userPosts", JSON.stringify(updated));
+          return updated;
+        });
 
         const replyResults = await Promise.all(
-          posts.map((post) =>
+          posts.map(post =>
             axios
               .get(`https://supabase-socmed.vercel.app/post/${post.id}`, {
-                headers: {
-                  Authorization: `Bearer ${userBearerToken}`,
-                },
+                headers: { Authorization: `Bearer ${userBearerToken}` },
               })
-              .then((res) => ({ id: post.id, data: res.data }))
-              .catch((err) => {
-                console.error(`Failed to fetch replies for post ${post.id}:`, err);
+              .then(res => ({ id: post.id, data: res.data }))
+              .catch(err => {
+                console.error(`Failed to fetch replies for post ${post.id}`, err);
                 return null;
               })
           )
         );
 
         const filteredReplies = replyResults.filter(Boolean);
-
-        if (isMounted.current) {
-          setUserReplies((prev) => {
-            const updated = { ...prev };
-            filteredReplies.forEach(({ id, data }) => {
-              updated[id] = data;
-            });
-            sessionStorage.setItem("userReplies", JSON.stringify(updated));
-            return updated;
+        setUserReplies(prev => {
+          const updated = { ...prev };
+          filteredReplies.forEach(({ id, data }) => {
+            updated[id] = data;
           });
+          sessionStorage.setItem("userReplies", JSON.stringify(updated));
+          return updated;
+        });
 
-          if (!sessionPosts[page]) {
-            setIsLoading(false);
-          }
-        }
+        setLoadingPages(prev => prev.filter(p => p !== page));
       } catch (error) {
-        console.error("Failed to fetch posts or replies:", error);
-        if (!sessionPosts[page]) {
-          setIsLoading(false); 
-        }
+        console.error("Fetch error:", error);
       }
     };
 
     fetchPostsAndReplies();
-    const intervalId = setInterval(fetchPostsAndReplies, 5000);
+
+    const intervalId = setInterval(fetchPostsAndReplies, 15000);
 
     return () => {
       isMounted.current = false;
@@ -90,5 +82,7 @@ export const useLiveUserPosts = (page, userBearerToken) => {
     };
   }, [page, userBearerToken]);
 
-  return { userPosts, userReplies, isLoading };
+  const isLoading = loadingPages.includes(page);
+
+  return { userPosts, userReplies, isLoading, setUserReplies };
 };

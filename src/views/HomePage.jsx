@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Grid, Typography, TextField, List, ListItem, ListItemButton, Stack, IconButton, Skeleton, Button, Box, Collapse} from "@mui/material"
+import { Grid, Typography, List, ListItem, ListItemButton, Stack, IconButton, Skeleton, Button, Box, Collapse, Alert, AlertTitle, TextField, InputAdornment} from "@mui/material"
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import axios from 'axios';
@@ -12,16 +12,18 @@ import { ThumbDown, ThumbUp } from "@mui/icons-material"
 import { ReplyComponent } from '../components/ReplyComponent';
 import { retrieveSessionToken } from '../components/sessionTimeoutHandler';
 import { useLiveUserPosts} from '../components/UserPostsHandler';
+import SendIcon from '@mui/icons-material/Send';
 const HomePage = () => {
 
   const userBearerToken = retrieveSessionToken()
   const userData = retrieveUserData()
   const [userLikes, setUserLikes] = useState([])
   const [page, setPage] = useState(1)
-  const {userPosts, userReplies, isLoading} = useLiveUserPosts(page, retrieveSessionToken());
+  const {userPosts, userReplies, isLoading, setUserReplies} = useLiveUserPosts(page, retrieveSessionToken());
   const posts = userPosts?.[page] || [];
   const [likedUnliked, setLikedUnliked] = useState(false)
   const [openReplies, setOpenReplies] = useState({})
+  const [currentReply, setCurrentReply] = useState({})
     useEffect(() => {
       const fetchLikedPosts = async () => {
         try {
@@ -39,10 +41,29 @@ const HomePage = () => {
         fetchLikedPosts();  
     }, []);
 
-    const checkIfPostIsLiked = (itemId) => {
-      const liked = userLikes.some(post=>post.posts.id === itemId)
-      return liked
+    const handlePostReply = async (reply, postID) => {
+      if(reply == ""){
+
+      }
+      setCurrentReply((prev)=>({
+        ...prev,
+        [postID]:""
+      }))
+      try {
+        const response =  await axios.post(`https://supabase-socmed.vercel.app/post/${postID}/replies`,{
+          content:reply
+          },{headers:{
+            Authorization:`Bearer ${userBearerToken}`
+          }})
+
+          
+      } catch (error) {
+        console.error(error)
+      }
+      
     }
+
+
 
     const getUpdatedLikes = async () =>{
       try{
@@ -60,6 +81,7 @@ const HomePage = () => {
     }
 
     const handleLike = async (postIndex) =>{
+
       try {
         setLikedUnliked(true)
         const response = await axios.post(`https://supabase-socmed.vercel.app/post/${postIndex}/likes`,null,{
@@ -92,8 +114,6 @@ const HomePage = () => {
       }
     }
 
-   
-
     const handleShowReplies = (itemId) => {
       setOpenReplies((prev) => {
         const next = {
@@ -108,7 +128,6 @@ const HomePage = () => {
   return (
     <>
     <Navbar />
-    
       <Box sx={{ display: 'flex', flexDirection:{
         xs:"column",
         lg:"row"
@@ -128,171 +147,119 @@ const HomePage = () => {
             </Stack>
           
         </Box>
-        <Grid item size={6} sx={{ maxWidth:"1000px", padding:2,  overflowY: "scroll", overflowX:"hidden", maxHeight:"90svh", }}>
-          <Stack direction={"row"}>
-            <Button variant="contained" onClick={()=>setPage(prev=>prev+1)}>Next</Button>
-            <Button variant="contained" onClick={()=>setPage((prev) => (prev > 1 ? prev - 1 : prev))}>Previous</Button> 
+        <Grid container sx={{width:1000, padding: 2,  maxHeight:"90svh"}}>
+          <Stack direction="row" width="100%" spacing={2} mb={2} justifyContent={"center"} alignItems={"center"} sx={{ position:"sticky", top:0, zIndex:1, backgroundColor:"white", height:"100%", padding:2, boxShadow:3 }}>
+            <Button variant="contained" onClick={() => setPage(prev => (prev > 1 ? prev - 1 : prev))}>Previous</Button>
             <Typography variant="body1">Page {page}</Typography>
+            <Button variant="contained" onClick={() => setPage(prev => prev + 1)}>Next</Button>
           </Stack>
-          <List sx={{ width:"100%" }}>
-             {isLoading && 
-                [...Array(9)].map((_, index) => (
-                  <ListItem
-                    key={index}
-                    sx={{
-                      display: "grid",
-                      gap: 0,
-                      backgroundColor: "white",
-                      boxShadow: 3,
-                      mb: 2,
-                      padding: 1,
-                      width: "100%",
-                    }}
-                  >
-                    <Stack direction="row" sx={{ mb: 2, width: "max-content" }} spacing={1}>
-                      <IconButton
-                        sx={{
-                          width: "max-content",
-                          borderRadius: 50,
-                          "&:hover": {
-                            color: "blue",
-                          },
-                        }}
-                      >
-                        <ThumbUp />
-                      </IconButton>
-                      <IconButton
-                        sx={{
-                          width: "max-content",
-                          borderRadius: 50,
-                          "&:hover": {
-                            color: "red",
-                          },
-                        }}
-                      >
-                        <ThumbDown />
-                      </IconButton>
-                    </Stack>
 
-                    <ListItemButton sx={{ margin: 0, width: "100%" }}>
-                      <Grid container sx={{ width: "max-content", padding: 3, gap: 2 }}>
-                        <Grid item xs={12}>
-                          <Stack spacing={1} direction="row" alignItems="center">
-                            <Skeleton variant="circular" sx={{ width: "100px", height: "100px" }} />
-                            <Skeleton variant="rounded" sx={{ width: "100px", height: "10px" }} />
-                          </Stack>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Stack direction="row" alignItems="center">
-                            <Skeleton variant="text" sx={{ width: "100%", height: "10px" }} />
-                          </Stack>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Stack direction="row" alignItems="center">
-                            <Skeleton variant="rectangular" sx={{ width: "100%", height: "100px" }} />
-                          </Stack>
-                        </Grid>
-                        <Grid item xs={12}>
-                          <Stack
-                            spacing={0.5}
-                            direction="row"
-                            sx={{ display: "flex", alignItems: "center", height: "fit-content" }}
-                          >
-                            <Skeleton variant="rounded" sx={{ width: "100px", height: "10px" }} />
-                          </Stack>
-                        </Grid>
-                      </Grid>
-                    </ListItemButton>
-                  </ListItem>
-                ))
-              }
-
-              {!isLoading &&
-              posts.map((item, index) => (
+          <List sx={{ width: "100%", overflowY: "scroll", overflowX: "hidden", maxHeight: "80svh", padding:1 }}>
+            {(isLoading ? [...Array(9)] : posts).map((item, index) => {
+              const post = isLoading ? {} : item;
+              return (
                 <ListItem
-                  key={item.id}
+                  key={isLoading ? index : post.id}
                   sx={{
-                    display: "grid",
-                    gap: 0,
+                    display: "flex",
+                    flexDirection: "column",
                     backgroundColor: "white",
                     boxShadow: 3,
                     mb: 2,
-                    padding: 1,
+                    padding: 2,
                     width: "100%",
                   }}
                 >
-                  <Stack direction="row" sx={{ mb: 2, width: "max-content" }} spacing={1}>
-                    <IconButton
-                      sx={{
-                        width: "max-content",
-                        borderRadius: 50,
-                        "&:hover": {
-                          color: "blue",
-                        },
-                      }}
-                      onClick={() => handleLike(item.id)}
-                      color={checkIfPostIsLiked(item.id) ? "primary" : "inherit"}
-                    >
+                  <Stack direction="row" spacing={1} sx={{ width: "100%", mb: 2 }}>
+                    <IconButton sx={{ borderRadius: 50, "&:hover": { color: "blue" } }}>
                       <ThumbUp />
                     </IconButton>
-
-                    <IconButton
-                      sx={{
-                        width: "max-content",
-                        borderRadius: 50,
-                        "&:hover": {
-                          color: "red",
-                        },
-                      }}
-                      onClick={() => handleUnlike(item.id)}
-                    >
+                    <IconButton sx={{ borderRadius: 50, "&:hover": { color: "red" } }}>
                       <ThumbDown />
                     </IconButton>
                   </Stack>
 
-                  <ListItemButton sx={{ margin: 0, width: "100%" }}>
-                    <PostComponent
-                      key={item.id}
-                      postOwnerData={item.users}
-                      postContent={item.content}
-                      postDateCreated={item.created_at}
-                      postRepliesCount={item.replies?.[0]?.count ?? 0}
-                      postLikesCount={item.likes?.[0]?.count ?? 0}
-                      postID={item.id}
-                      isLoading={isLoading}
-                    />
-                  </ListItemButton>
+                  {isLoading ? (
+                    <>
+                      <Stack spacing={1} direction="row" alignItems="center" sx={{ placeSelf:"start" }}> 
+                        <Skeleton variant="circular" width={100} height={100} />
+                        <Skeleton variant="text" width={100} height={10} />
+                      </Stack>
+                      <Skeleton variant="text" width="100%" height={10} />
+                      <Skeleton variant="rectangular" width="100%" height={100} />
+                      <Skeleton variant="text" width={100} height={10} />
+                    </>
+                  ) : (
+                    <>
+                      <PostComponent
+                        postOwnerData={post.users}
+                        postContent={post.content}
+                        postDateCreated={post.created_at}
+                        postRepliesCount={post.replies?.[0]?.count ?? 0}
+                        postLikesCount={post.likes?.[0]?.count ?? 0}
+                        postID={post.id}
+                        isLoading={isLoading}
+                      />
 
-                  <ListItemButton onClick={() => handleShowReplies(item.id)}>
-                    open replies
-                  </ListItemButton>
+                      <TextField
+                        fullWidth
+                        label="Write your reply"
+                        variant="filled"
+                        value={currentReply[item.id]}
+                        onChange={(e) => {
+                          setCurrentReply((prev)=>({
+                            ...prev,
+                            [item.id]: e.target.value
+                          }))
+                        }}
+                        InputProps={{ 
+                          endAdornment:(
+                            <InputAdornment position='end'>
+                              <IconButton onClick={()=>handlePostReply(currentReply[item.id], item.id)}>
+                                <SendIcon/>
+                              </IconButton>
+                            </InputAdornment>
+                          )
+                         }}
+                      />
 
-                  <Collapse in={!!openReplies[item.id]} timeout="auto" unmountOnExit>
-                    <List
-                      sx={{
-                        width: "950px",
-                        maxHeight: "200px",
-                        overflowY: "scroll",
-                        overflowX: "hidden",
-                        scrollbarColor: "transparent",
-                      }}
-                    >
-                     {userReplies[item.id]?.replies?.map((reply, index) => (
-                        <ReplyComponent
-                          key={reply.id}
-                          replyContent={reply.content}
-                          replyID={reply.id}
-                          replyOwnerData={reply.users}
-                        />
-                      ))}
+                      <ListItemButton sx={{ placeSelf:"start" }} onClick={() => handleShowReplies(post.id)}>
+                        open replies
+                      </ListItemButton>
 
-                    </List>
-                  </Collapse>
+                      <Collapse sx={{ placeSelf:"end", width:"100%" }} in={!!openReplies[post.id]} timeout="auto" unmountOnExit>
+                        <List
+                          sx={{
+                            width: "100%",
+                            maxHeight: "200px",
+                            overflowY: "scroll",
+                            overflowX: "hidden",
+                            scrollbarColor: "transparent",
+                          }}
+                        >
+                          {userReplies[post.id]?.replies?.map((reply) => (
+                            <ReplyComponent
+                              key={reply.id}
+                              replierID={reply.owned_by}
+                              replyContent={reply.content}
+                              userBearerToken={userBearerToken}
+                              replyID={reply.id}
+                              postId={post.id}
+                              replyOwnerData={reply.users}
+                              setUserReplies={setUserReplies}
+                              currentUserID={userData.id}
+                            />
+                          ))}
+                        </List>
+                      </Collapse>
+                    </>
+                  )}
                 </ListItem>
-              ))}
- 
+              );
+            })}
           </List>
-          </Grid>
+        </Grid>
+
       </Box>
     
     </>
