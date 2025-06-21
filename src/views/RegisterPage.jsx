@@ -81,17 +81,17 @@ const RegisterPage = () => {
   };
 
   return (
-    <Box sx={{ display: "grid", height: "95vh" }}>
-        <Box sx={{ maxWidth: 500, mx: 'auto', px: 3, py: 4, boxShadow: 3, borderRadius: 2,  placeSelf: 'center', }}>
-        <Typography variant="h4" gutterBottom align="center">
-            Create an Account
-        </Typography>
-
+    <Box sx={{ display: "grid", height: "100svh", backgroundColor:"#B09E7D", position:"relative" }}>
+      <Typography variant="h2" sx={{ position:"absolute", top:0, right:0, padding: 7, fontWeight:"900", color:"#0B1657"}}>EchoNote</Typography>
+        <Box sx={{ maxWidth: 500, mx: 'auto', px: 3, py: 4, borderRadius: 2,  placeSelf: 'center', }}>
         <form onSubmit={handleSubmit} noValidate>
             <Grid container spacing={3}  > 
-            <Grid item size={{ lg: 6, xs: 12}}>
+            <Grid item size={{xs: 12}}>
                 <TextField
                 fullWidth
+                variant='filled'
+                sx={{ backgroundColor:"#E6D8C7" }}
+                color={"#B09E7D"}
                 label="First Name"
                 name="firstName"
                 value={formData.firstName}
@@ -99,8 +99,11 @@ const RegisterPage = () => {
                 required
                 />
             </Grid>
-            <Grid item size={{ lg: 6, xs: 12 }}>
+            <Grid item size={{ xs: 12 }}>
                 <TextField
+                sx={{ backgroundColor:"#E6D8C7" }}
+                color={"#B09E7D"}
+                variant='filled'
                 fullWidth
                 label="Last Name"
                 name="lastName"
@@ -111,6 +114,9 @@ const RegisterPage = () => {
             </Grid>
             <Grid item size={{ lg: 12, xs: 12 }}>
                 <TextField
+                sx={{ backgroundColor:"#E6D8C7" }}
+                color={"#B09E7D"}
+                variant='filled'
                 fullWidth
                 label="Email"
                 name="email"
@@ -122,6 +128,9 @@ const RegisterPage = () => {
             </Grid>
             <Grid item size={{ lg:6, xs: 12 }}>
                 <TextField
+                sx={{ backgroundColor:"#E6D8C7" }}
+                color={"#B09E7D"}
+                variant='filled'
                 fullWidth
                 label="Password"
                 name="password"
@@ -146,6 +155,9 @@ const RegisterPage = () => {
             </Grid>
             <Grid item size={{ lg:6, xs: 12 }}>
                 <TextField
+                sx={{ backgroundColor:"#E6D8C7" }}
+                color={"#B09E7D"}
+                variant='filled'
                 fullWidth
                 label="Confirm Password"
                 name="confirmPassword"
@@ -177,10 +189,16 @@ const RegisterPage = () => {
             type="submit"
             fullWidth
             variant="contained"
-            sx={{ mt: 3 }}
+            sx={{ mt: 3, backgroundColor:"#0B1657" }}
             disabled={loading}
+
             >
             {loading ? 'Processing...' : 'Register'}
+            </Button>
+            <Button fullWidth variant="contained" color="primary" sx={{ mt:3 }} onClick={()=>{
+              navigate("/")
+            }}>
+              Return Home
             </Button>
         </form>
         </Box>
