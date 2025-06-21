@@ -9,7 +9,7 @@ export const PostComponent = ({postOwnerData, postContent ,postLikesCount, postR
         <Grid container sx={{ width:"100%", padding:3}}>
             <Grid item size={{ xs:12 }}>
                 <Stack spacing={1} direction={"row"} alignItems={"center"}>
-                    <UserProfilePicture imageSrc={postOwnerData?.profile_picture} />
+                    <UserProfilePicture imageSrc={`${postOwnerData?.profile_picture}?t=${Date.now()}`} />
                     <Typography variant="body1" color="initial">{postOwnerData?.fName + " " + postOwnerData?.lName}</Typography>
                 </Stack>
             </Grid>

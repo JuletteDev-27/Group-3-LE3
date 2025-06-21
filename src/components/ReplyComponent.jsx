@@ -38,7 +38,7 @@ export const ReplyComponent = ({replyOwnerData, replyContent , postId, replyID, 
                 
                 <Grid item size={{ xs:12 }}>
                     <Stack spacing={1} direction={"row"} alignItems={"center"}>
-                        <UserProfilePicture imageSrc={replyOwnerData?.profile_picture} />
+                        <UserProfilePicture imageSrc={`${replyOwnerData?.profile_picture}?t=${Date.now()}`} />
                         <Typography variant="body1" color="initial">Reply From {replyOwnerData?.fName + " " + replyOwnerData?.lName}</Typography>
                     </Stack>
                 </Grid>

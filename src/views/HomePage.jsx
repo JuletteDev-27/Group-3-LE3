@@ -15,6 +15,8 @@ import { useLiveUserPosts} from '../components/UserPostsHandler';
 import SendIcon from '@mui/icons-material/Send';
 const HomePage = () => {
 
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
   const userBearerToken = retrieveSessionToken()
   const userData = retrieveUserData()
   const [userLikes, setUserLikes] = useState([])
@@ -24,95 +26,131 @@ const HomePage = () => {
   const [likedUnliked, setLikedUnliked] = useState(false)
   const [openReplies, setOpenReplies] = useState({})
   const [currentReply, setCurrentReply] = useState({})
+  const [currentPost, setCurrentPost] = useState(null)
+
     useEffect(() => {
-      const fetchLikedPosts = async () => {
+      if (successMsg || errorMsg) {
+        const timer = setTimeout(() => {
+          setSuccessMsg("");
+          setErrorMsg("");
+        }, 5000);
+        return () => clearTimeout(timer);
+      }
+    }, [successMsg, errorMsg]);
+
+    useEffect(() => {
+       const fetchLikedPosts = async () => {
         try {
           const response = await axios.get(`https://supabase-socmed.vercel.app/user/likes`, {
-              headers: {
-                Authorization: `Bearer ${userBearerToken}`,
-              },
-            });
-              setUserLikes(response.data);
-            } catch (error) {
-              console.error("Failed to fetch liked posts:", error);
-            }
-        };
-          
-        fetchLikedPosts();  
+            headers: {
+              Authorization: `Bearer ${userBearerToken}`,
+            },
+          });
+          const likedPostIds = response.data.map((item) => item.posts?.id).filter(Boolean);
+          setUserLikes(likedPostIds);
+        } catch (error) {
+          console.error("Failed to fetch liked posts:", error);
+          setErrorMsg("Failed to fetch liked posts.");
+        }
+      };
+
+      fetchLikedPosts();
     }, []);
 
-    const handlePostReply = async (reply, postID) => {
-      if(reply == ""){
-
+    const handleUploadPost = async () => {
+      if (currentPost === "") {
+        setErrorMsg("Post content cannot be empty.");
+        return;
       }
-      setCurrentReply((prev)=>({
-        ...prev,
-        [postID]:""
-      }))
+
       try {
-        const response =  await axios.post(`https://supabase-socmed.vercel.app/post/${postID}/replies`,{
-          content:reply
-          },{headers:{
-            Authorization:`Bearer ${userBearerToken}`
-          }})
-
-          
-      } catch (error) {
-        console.error(error)
-      }
-      
-    }
-
-
-
-    const getUpdatedLikes = async () =>{
-      try{
-        const likesUpdate = await axios.get(`https://supabase-socmed.vercel.app/user/likes`, {
+        const response = await axios.post(
+          "https://supabase-socmed.vercel.app/post",
+          { content: currentPost },
+          {
             headers: {
-                Authorization: `Bearer ${userBearerToken}`,
-              },
-            });
-            setUserLikes(likesUpdate.data);
-      }catch(error){
-          console.error(error)
-      }
-      
-      likesUpdate()
-    }
-
-    const handleLike = async (postIndex) =>{
-
-      try {
-        setLikedUnliked(true)
-        const response = await axios.post(`https://supabase-socmed.vercel.app/post/${postIndex}/likes`,null,{
-          headers:{
-            Authorization: `Bearer ${userBearerToken}`
+              Authorization: `Bearer ${userBearerToken}`,
+            },
           }
-        })
-        if(response.status !== 409){
-          getUpdatedLikes()
-        }
-      }catch (error) {
-        console.error(error)
-      }
-    }
-
-    const handleUnlike = async (postIndex) =>{
-      try {
-        setLikedUnliked(true)
-        const response = await axios.delete(`https://supabase-socmed.vercel.app/post/${postIndex}/likes`,{
-          headers:{
-            Authorization: `Bearer ${userBearerToken}`
-          }
-        })
-
-        if(response.status !== 409){
-            getUpdatedLikes()
-          }
+        );
+        setCurrentPost("");
+        setSuccessMsg("Post uploaded successfully.");
       } catch (error) {
-        console.error(error)
+        console.error(error);
+        setErrorMsg("Failed to upload post.");
       }
+    };
+
+    const handlePostReply = async (reply, postID) => {
+      if (reply === "") {
+        setErrorMsg("Reply cannot be empty.");
+        return;
+      }
+
+      try {
+        await axios.post(
+          `https://supabase-socmed.vercel.app/post/${postID}/replies`,
+          { content: reply },
+          {
+            headers: {
+              Authorization: `Bearer ${userBearerToken}`,
+            },
+          }
+        );
+
+        setCurrentReply((prev) => ({
+          ...prev,
+          [postID]: "",
+        }));
+        setSuccessMsg("Reply posted successfully.");
+      } catch (error) {
+        console.error(error);
+        setErrorMsg("Failed to post reply.");
+      }
+    };
+
+
+    const getUpdatedLikes = async () => {
+    try {
+      const response = await axios.get(`https://supabase-socmed.vercel.app/user/likes`, {
+        headers: {
+          Authorization: `Bearer ${userBearerToken}`,
+        },
+      });
+
+      const likedPostIds = response.data.map(item => item.posts?.id).filter(Boolean);
+
+      setUserLikes(likedPostIds);
+    } catch (error) {
+      console.error("Failed to update liked posts:", error);
     }
+  };
+
+
+    const toggleLike = async (postId) => {
+      try {
+        const isLiked = userLikes.includes(postId);
+        setLikedUnliked(true);
+
+        if (isLiked) {
+          await axios.delete(`https://supabase-socmed.vercel.app/post/${postId}/likes`, {
+            headers: { Authorization: `Bearer ${userBearerToken}` },
+          });
+          setSuccessMsg("Post unliked.");
+        } else {
+          await axios.post(`https://supabase-socmed.vercel.app/post/${postId}/likes`, null, {
+            headers: { Authorization: `Bearer ${userBearerToken}` },
+          });
+          setSuccessMsg("Post liked.");
+        }
+
+        await getUpdatedLikes();
+      } catch (error) {
+        console.error("Error toggling like:", error);
+        setErrorMsg("Failed to toggle like.");
+      }
+    };
+
 
     const handleShowReplies = (itemId) => {
       setOpenReplies((prev) => {
@@ -127,28 +165,66 @@ const HomePage = () => {
 
   return (
     <>
-    <Navbar />
+      <Navbar />
+      
       <Box sx={{ display: 'flex', flexDirection:{
         xs:"column",
         lg:"row"
-      }, justifyContent:"space-evenly", alignItems:"center", "height":"90svh", padding:2}}>
+      }, justifyContent:"space-evenly", alignItems:"center", height:"90.3svh", padding:2, backgroundColor:"#B09E7D", position:"relative"}}>
+        {successMsg && (
+          <Alert severity="success" sx={{ width: "100%", mb: 2, position:"absolute", top:0, left:0, zIndex:2 }}>
+            <AlertTitle>Success</AlertTitle>
+            {successMsg}
+          </Alert>
+        )}
+
+        {errorMsg && (
+          <Alert severity="error" sx={{ width: "100%", mb: 2, position:"absolute", top:0, left:0, zIndex:2 }}>
+            <AlertTitle>Error</AlertTitle>
+            {errorMsg}
+          </Alert>
+        )}
         <Box
           sx={{
-            width: 'max-content',
+            width: '25%',
             display: 'flex',
             flexDirection: 'column',
             boxSizing: 'border-box',
-            alignSelf:"end",
+            alignSelf:"center",
+            alignItems:"center",
+            height:"90%",
+            gap:3
           }}
         >
+            <Stack spacing={2} sx={{ width:"100%", height:"100%", boxShadow:3, padding:3, backgroundColor:"#D5E5F4", borderRadius:10 }}>
+              <Typography variant="h4" color="initial">Upload Post</Typography>
+               <TextField
+                  id="filled-multiline-static"
+                  label="What's On Your Mind Today?"
+                  multiline
+                  rows={16  }
+                  variant="filled"
+                  value={currentPost}
+                  onChange={(e)=>{setCurrentPost(e.target.value)}}
+                  sx={{ backgroundColor:"#E6D8C7" }}
+                />
+                <Button variant='contained' onClick={handleUploadPost} fullWidth>
+                  Post
+                  <IconButton>
+                    <SendIcon/>
+                  </IconButton>
+                </Button>
+                
+            </Stack>
             <Stack direction={"column"} alignItems={"center"} sx={{ width:"max-content" }}>
-              <UserProfilePicture imageSrc={userData?.profile_picture} lgWidthHeight={100} xsWidthHeight={100}/>
-              <Typography sx={{ mt: 1 }}>{userData.fName + " " + userData.lName}</Typography>
+              <UserProfilePicture imageSrc={`${userData?.profile_picture}?t=${Date.now()}`} lgWidthHeight={150} xsWidthHeight={150}/>
+              <Typography variant='h5' fontWeight={700} sx={{ mt: 1 }}>{userData.fName + " " + userData.lName}</Typography>
+              <Typography variant='subtitle' fontWeight={300} fontStyle={"italic"} sx={{ mt: 1 }}>@{userData.email}</Typography>
             </Stack>
           
         </Box>
         <Grid container sx={{width:1000, padding: 2,  maxHeight:"90svh"}}>
-          <Stack direction="row" width="100%" spacing={2} mb={2} justifyContent={"center"} alignItems={"center"} sx={{ position:"sticky", top:0, zIndex:1, backgroundColor:"white", height:"100%", padding:2, boxShadow:3 }}>
+          <Stack direction="row" width="100%" spacing={2} mb={2} justifyContent={"center"} alignItems={"center"} sx={{ position:"sticky", top:0, zIndex:1, backgroundColor:"white", height:"100%", padding:2, boxShadow:3, borderRadius:10 }}>
             <Button variant="contained" onClick={() => setPage(prev => (prev > 1 ? prev - 1 : prev))}>Previous</Button>
             <Typography variant="body1">Page {page}</Typography>
             <Button variant="contained" onClick={() => setPage(prev => prev + 1)}>Next</Button>
@@ -163,21 +239,17 @@ const HomePage = () => {
                   sx={{
                     display: "flex",
                     flexDirection: "column",
-                    backgroundColor: "white",
+                    backgroundColor: "#E6D8C7",
                     boxShadow: 3,
                     mb: 2,
                     padding: 2,
                     width: "100%",
+                    borderRadius:10, 
+                    borderColor:"#0B1657",
+                    borderWidth:2,
+                    borderStyle:"solid"
                   }}
                 >
-                  <Stack direction="row" spacing={1} sx={{ width: "100%", mb: 2 }}>
-                    <IconButton sx={{ borderRadius: 50, "&:hover": { color: "blue" } }}>
-                      <ThumbUp />
-                    </IconButton>
-                    <IconButton sx={{ borderRadius: 50, "&:hover": { color: "red" } }}>
-                      <ThumbDown />
-                    </IconButton>
-                  </Stack>
 
                   {isLoading ? (
                     <>
@@ -191,6 +263,22 @@ const HomePage = () => {
                     </>
                   ) : (
                     <>
+                       <Stack direction="row" spacing={1} sx={{ width: "100%", mb: 2 }}>
+                          <IconButton
+                            onClick={() => toggleLike(item.id)}
+                            color={userLikes.includes(item.id) ? "primary" : "default"}
+                            sx={{
+                              borderRadius: 50,
+                              transition: "color 0.3s ease",
+                              "&:hover": {
+                                color: userLikes.includes(item.id) ? "#1565c0" : "blue",
+                              }
+                            }}
+                          >
+                            <ThumbUp />
+                          </IconButton>
+
+                        </Stack>
                       <PostComponent
                         postOwnerData={post.users}
                         postContent={post.content}
